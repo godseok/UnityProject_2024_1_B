@@ -1,17 +1,26 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject CircleObject;
+    public GameObject[] CircleObject;
     public Transform GenTransform;
     public float TimeCheck;
     public bool isGen;
+
+    public int Point;
+    public int BestScore;
+    public static event Action<int> OnPointChanged;
+    public static event Action<int> OnBestScoreChanged;
     // Start is called before the first frame update
     void Start()
     {
+        BestScore = PlayerPrefs.GetInt("BestScore");
         GenObject();
+        OnPointChanged?.Invoke(Point);
+        OnBestScoreChanged?.Invoke(BestScore);
     }
 
     // Update is called once per frame
@@ -22,7 +31,8 @@ public class GameManager : MonoBehaviour
             TimeCheck -= Time.deltaTime;
             if (TimeCheck <= 0)
             {
-                GameObject Temp = Instantiate(CircleObject);
+                int RandNumber = UnityEngine.Random.Range(0, 3);
+                GameObject Temp = Instantiate(CircleObject[RandNumber]);
                 Temp.transform.position = GenTransform.position;
                 isGen = true;
             }
@@ -33,5 +43,25 @@ public class GameManager : MonoBehaviour
     {
         isGen = false;
         TimeCheck = 1.0f;
+    }
+
+    public void MergeObject(int index, Vector3 position)
+    {
+        GameObject Temp = Instantiate(CircleObject[index]);
+        Temp.transform.position = position;
+        Temp.GetComponent<CircleObject>().Used();
+
+        Point += (int)MathF.Pow(index, 2) * 10;
+        OnPointChanged?.Invoke(Point);
+    }
+
+    public void EndGame()
+    {
+        if(Point > BestScore)
+        {
+            BestScore = Point;
+            PlayerPrefs.SetInt("BestScore", BestScore);
+            OnBestScoreChanged?.Invoke(BestScore);
+        }
     }
 }
